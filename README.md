@@ -98,6 +98,7 @@ You can configure the following options when running the commands:
    ```
 
 4. **Open the database browser interface**:
+   *Note: This does not work with PowerShell. Must use Command Prompt in windows*
    ```bash
    mysqlsyncr ui --host localhost --user root --password yourpassword
    ```
