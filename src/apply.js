@@ -205,7 +205,7 @@ export const applyDifferences = async (connection, database, differences) => {
                 const columnNames = existingColumns.map(col => col.Field);
 
                 // Check if all columns for the index exist
-                const missingColumns = Array.isArray(diff.index.ColumnName) ? diff.index.ColumnName.filter(col => !columnNames.includes(col)) : [];
+                const missingColumns = Array.isArray(diff.index.ColumnName) ? diff.index.ColumnName.filter(col => !columnNames.includes(col) && !columnNames.includes(col.split("(")?.[0])) : [];
 
                 if (missingColumns.length > 0) {
                     logger(`Cannot create index ${diff.index.Name} on ${diff.tableName}. Missing columns: ${missingColumns.join(', ')}`);
@@ -213,8 +213,23 @@ export const applyDifferences = async (connection, database, differences) => {
                 }
 
                 // Prepare the index columns with proper formatting
-                const indexColumns = diff.index.ColumnName.map(col => `\`${col}\``); // Format column names
+                const indexColumns = diff.index.ColumnName.map(col => {
+                    if(col.includes("(")){                        
+                        
+                        const match = col.match(/^(?:`([^`]+)`|([A-Za-z_][A-Za-z0-9_\$]*))\((\d+)\)$/);
 
+                        if (match) {
+                            const name = match[1] || match[2]; // one of them will be filled
+                            const size = match[3];
+                            console.log(name, size);
+                            return `\`${name}\`(${size})`;
+                        }
+
+                        return `\`${col.split("(")[0]}\``
+                    } else {
+                        return `\`${col}\``; // Format column names
+                    }
+                });
                 // Handle PRIMARY index creation
                 if (diff.index.Name === 'PRIMARY') {
                     if (indexColumns.length > 0) {
