@@ -15,7 +15,11 @@ export const parseCreateTableSQL = (createTableSQL) => {
     const columnRegex = /`([^`]+)`\s+([^\s,]+)(\s+NOT NULL|\s+NULL)?(\s+DEFAULT\s+([^,\s]+))?(\s+AUTO_INCREMENT)?/;
 
     // Regular expression to match index definitions
-    const indexRegex = /(PRIMARY|UNIQUE)?\s*KEY\s*`([^`]+)`\s*\(([^)]+)\)|PRIMARY KEY\s*\(([^)]+)\)/;
+    const indexRegex_Old = /(PRIMARY|UNIQUE)?\s*KEY\s*`([^`]+)`\s*\(([^)]+)\)|PRIMARY KEY\s*\(([^)]+)\)/;
+
+    // Updated to support indexes for text fields 
+    // 'KEY `idx_e2alarms_alarmstring` (`alarmString`(255))' -- would cut off the final bracket and wouldnt work.
+    const indexRegex = /(PRIMARY|UNIQUE)?\s*KEY\s*`([^`]+)`\s*\(((?:`[^`]+`(?:\(\d+\))?(?:\s*,\s*)?)+)\)|PRIMARY KEY\s*\(((?:`[^`]+`(?:\(\d+\))?(?:\s*,\s*)?)+)\)/;
 
     // Regular expression to match table options (ENGINE, CHARSET, COLLATE)
     const optionsRegex = /ENGINE=(\w+)\s+DEFAULT\s+CHARSET=(\w+)(\s+COLLATE=(\w+))?/;
@@ -29,6 +33,8 @@ export const parseCreateTableSQL = (createTableSQL) => {
         // Check if the line contains a column definition
         const columnMatch = columnRegex.exec(line);
         const indexMatch = indexRegex.exec(line);
+        const indexMatch_Old = indexRegex_Old.exec(line);
+
         const constraintMatch = parseConstraint(line);
         if (columnMatch && !indexMatch && !constraintMatch) {
             const columnType = parseColumnType(line);
